@@ -43,7 +43,7 @@ This tap:
     Use the discover flag to explore the schema for each of this tap's resources
 
     ```bash
-    > tap-autopulot --config config.json --discover
+    > tap-autopilot --config config.json --discover
     ```
 
     Pipe the output of this file to a file that will serve as the catalog, where you will select which streams and properties to sync
@@ -94,12 +94,12 @@ This tap:
     }
     ``
 
-7. Run the application
+7. Run the application (use `--properties` param rather than `--catalog`)
 
     `tap-autopilot` can be run with:
 
     ```bash
-    tap-autopilot --config config.json --catalog catalog.json [--state state.json]
+    tap-autopilot --config config.json --properties catalog.json [--state state.json]
     ```
 
 ---
