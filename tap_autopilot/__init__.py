@@ -327,17 +327,35 @@ def sync_smart_segment_contacts(STATE, catalog):
         catalog.get("stream_alias"))
     params = {}
 
+    start = utils.strptime_with_tz(get_start(STATE, "smart_segments_contacts", "updated_at"))
+
+    LOGGER.info("Only syncing smart_segments_contacts updated since " + utils.strftime(start))
+    max_updated_at = start
+
     for row in gen_request(STATE, get_url("smart_segments"), params):
         subrow_url = get_url("smart_segments_contacts", segment_id=row["segment_id"])
         for subrow in gen_request(STATE, subrow_url, params):
-            singer.write_record("smart_segments_contacts", {
-                "segment_id": row["segment_id"],
-                "contact_id": subrow["contact_id"]
-            })
+            updated_at = None
+            if "updated_at" in subrow:
+                updated_at = utils.strptime_with_tz(
+                    _transform_datetime( # pylint: disable=protected-access
+                        subrow["updated_at"],
+                        UNIX_MILLISECONDS_INTEGER_DATETIME_PARSING))
 
-        LOGGER.info("Completed Smart Segment's Contacts Sync")
+            if not updated_at or updated_at >= start:
+                singer.write_record("smart_segments_contacts", {
+                    "segment_id": row["segment_id"],
+                    "contact_id": subrow["contact_id"]
+                })
 
-    LOGGER.info("Completed Smart Segments Contacts Sync")
+            if updated_at and updated_at > max_updated_at:
+                max_updated_at = updated_at
+
+        LOGGER.info("Completed Smart Segments Contacts Sync")
+
+    STATE = singer.write_bookmark(STATE, 'smart_segments_contacts', 'updated_at', utils.strftime(max_updated_at)) 
+    singer.write_state(STATE)
+
     return STATE
 
 
